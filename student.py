@@ -9,4 +9,8 @@ from model import GPT
 
 
 def build_model(config):
-    return GPT(config)
+    config = dict(config)     # ① 复制一份配置，不改坏原文件
+    config['width'] = 192     # ② 每层向量宽度 128 → 192（容量↑）
+    config['heads'] = 6       # ③ 注意力头 4 → 6
+    config['depth'] = 6       # ④ 层数 4 → 6（模型更深）
+    return GPT(config)        # ⑤ 用新配置造出更大的 GPT
