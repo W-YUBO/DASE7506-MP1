@@ -1,16 +1,9 @@
-"""Final MP1 model: 304-wide, 8-head, 8-layer GPT + Dropout 0.1.
+"""C6 候选：304/8/8 + Dropout 0.1。
 
-Changes vs. the classroom baseline (model.py):
-1. Capacity scaling: width 128 -> 304, heads 4 -> 8, depth 4 -> 8
-   (~9.6M parameters, still within the 5x CPU-time evaluation budget).
-2. Dropout 0.1 after the attention projection and after the MLP in every
-   block (training only; disabled in eval mode, so evaluation stays
-   deterministic).
-
-The final checkpoint is additionally an EMA (exponential moving average,
-decay 0.99) of the training weights; see train_ema.py, which stores the
-averaged weights in checkpoint.pt. Evaluate with the stock evaluator:
-    python evaluate.py --checkpoint <checkpoint.pt> --device cpu --precision fp32 --split test
+基于官方 model.py 的 GPT 结构，仅在两个残差分支的输出后加 dropout：
+1. 注意力分支 proj 之后
+2. MLP 分支之后
+dropout 只在训练时生效（model.eval() 时自动关闭），评测保持确定性。
 """
 import torch
 from torch import nn

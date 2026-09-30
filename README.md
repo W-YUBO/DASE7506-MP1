@@ -126,3 +126,43 @@ Compare reproduced BPB with the reported score. Submit **Peer Review Report** wi
 WikiText-2 was introduced by Stephen Merity, Caiming Xiong, James Bradbury and Richard Socher in [Pointer Sentinel Mixture Models](https://arxiv.org/abs/1609.07843). The text is by Wikipedia contributors. The [upstream dataset](https://huggingface.co/datasets/Salesforce/wikitext) identifies [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) and the [GNU Free Documentation License](https://www.gnu.org/licenses/fdl-1.3.html); retain these notices when redistributing the data.
 
 The supplied `wikitext-2-raw-v1` splits preserve revision `b08601e04326c79dfdd32d625aee71d232d685c3`. Rows are joined with newlines and encoded as UTF-8; the tokenizer is fitted only to training text. Dataset hashes are in `data/manifest.json`. These dataset notices do not assign a new license to the surrounding classroom code.
+
+---
+
+## Student submission notes (DASE 7506 MP1, student 3036837332)
+
+### Final model — reproduction instructions
+
+The submitted checkpoint is the EMA-averaged 304-wide / 8-head / 8-layer GPT with dropout 0.1 (9,604,576 parameters), trained for 7,000 steps (seed 17) on the supplied WikiText-2 training split.
+
+**Install (Python 3.12):**
+
+```bash
+cd code
+python -m venv .venv && source .venv/bin/activate   # or: conda create -n mp1 python=3.12 -y && conda activate mp1
+python -m pip install torch==2.7.1                    # GPU training: add --index-url https://download.pytorch.org/whl/cu126
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v               # contract checks, must pass
+```
+
+**Reproduce the submitted score (no retraining needed):**
+
+```bash
+# Download the checkpoint from the Release asset, then:
+python evaluate.py --checkpoint /path/to/checkpoint.pt --device cpu --precision fp32 --split test
+```
+
+Expected output: `bpb ≈ 1.5830226`, scoring time ≈ 15 s (within the 5× baseline budget on the submission machine), checkpoint size 39 MB (≤ 64 MiB).
+
+**Retrain from scratch:**
+
+```bash
+python train_ema.py --implementation student --device cpu --seed 17 --eval-every 300 --run-dir runs/repro --steps 7000
+# (use --device cuda for GPU; BF16 training is allowed, evaluation stays FP32/CPU)
+```
+
+`train_ema.py` is the official `train.py` plus an EMA (decay 0.99) that stores the averaged weights in `checkpoint.pt`. `variants/` contains the intermediate candidates described in the report (capacity-only, RoPE+SwiGLU, dropout, EMA combinations); the final implementation is `student.py` (+ `train_ema.py`).
+
+### AI assistance disclosure
+
+Substantive AI assistance (Claude, an AI assistant) was used during this project for: explaining the starter code and the evaluation protocol, suggesting model-improvement directions (capacity scaling, dropout regularization, EMA weight averaging, and the RoPE/SwiGLU variant that was explored and rejected), reviewing and debugging the training scripts, drafting parts of this README, and generating the first draft of the report text, tables and figures. All experiments were run by me, all reported numbers come from the official evaluator's output on my hardware or rented hardware, and I have reviewed and understand every change in the submitted code. The baseline model and harness code are the course's starter package; the WikiText-2 dataset attribution and license notices are in the official README above.
